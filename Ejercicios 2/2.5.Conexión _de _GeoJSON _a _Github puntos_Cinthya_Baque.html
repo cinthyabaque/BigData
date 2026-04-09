@@ -1,0 +1,119 @@
+<html>
+<head>
+    <title>Quinto Ejercicio Conexión a Github</title>
+    <meta charset="UTF-8">
+    
+    <h1 style="text-align:center; color:#18171c">Mapa de Ecuador Incendios GeoJSON conectado a Github</h1>
+	<h2 style="text-align:center; color:#8835B5">Conexión de GeoJSON a Github Puntos</h2>
+    <h3 style="text-align:center; color:#800020">Elaborado por: Cinthya Baque Ganan</h3>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
+    <script src="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.js"></script>
+	
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
+
+    <style>
+        #mapa { width: 100%; height: 500px; border: 2px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <div id="mapa"></div>
+
+    <script type="text/javascript">
+    
+    // 1. Definición de Capas Base
+    var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    });
+    
+    var ggl = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: 'Google Hybrid'
+    });
+    
+    var gglmps = L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+        attribution: 'Google Maps'
+    });
+
+    // 2. Inicialización del mapa 
+    var map = L.map("mapa", {
+        center: [-1.284498, -78.412664], 
+        zoom: 7,                
+        layers: [ggl],
+        fullscreenControl: true
+    });
+	
+	// 3. Personalización del icono	
+	var icono = L.icon({
+	 iconUrl:"https://media.tenor.com/Z6sMOpVRG78AAAAj/searching-loading.gif",
+	 iconSize:[30,30],
+	 iconAnchor:[15,15],
+	 popupAnchor:[1,-30]
+	});
+
+	// 4. Crear grupo de cluster
+	var grupo = L.markerClusterGroup();
+
+   // 5. Carga de Datos Github a Puntos
+    fetch("https://raw.githubusercontent.com/cinthyabaque/BigData/main/Incendios_Ecu.geojson")
+        .then(response => response.json())
+        .then(data => {
+            L.geoJSON(data, {
+                pointToLayer: function (feature, latlng) {
+                    var latReal = parseFloat(feature.properties.LATITUD);
+                    var lngReal = parseFloat(feature.properties.LONGITUD);
+                    
+                    if (!isNaN(latReal) && !isNaN(lngReal)) {
+                        return L.marker([latReal, lngReal], { icon: icono }); 
+                    }
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup("<b>Evento:</b> " + (feature.properties.EVENTO));
+					
+                }
+            }).addTo(map); 
+        })
+
+    
+    var basemaps = {
+        "Google Hybrid": ggl,
+        "Open Street Maps": osm,
+        "Google Maps": gglmps
+    };
+    L.control.layers(basemaps).addTo(map);
+
+    setTimeout(function(){ map.invalidateSize(); }, 500);
+
+</script>
+		
+    
+	
+</body>
+
+</html>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

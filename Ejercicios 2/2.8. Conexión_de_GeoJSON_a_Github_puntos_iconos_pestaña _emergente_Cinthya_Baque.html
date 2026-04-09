@@ -1,0 +1,121 @@
+<html>
+<head>
+    <title>Octavo Ejercicio Conexión a Github</title>
+    <meta charset="UTF-8">
+    
+    <h1 style="text-align:center; color:#18171c">Mapa de Ecuador Incendios GeoJSON conectado a Github</h1>
+	<h2 style="text-align:center; color:#8835B5">Conexión de GeoJSON a Github Puntos, Iconos y Pestaña Emergente</h2>
+    <h3 style="text-align:center; color:#800020">Elaborado por: Cinthya Baque Ganan</h3>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
+    <script src="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
+
+    <style>
+        #mapa { width: 100%; height: 500px; border: 2px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <div id="mapa"></div>
+
+    <script type="text/javascript">
+	
+        // 1. Definición de Capas Base
+        var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        });
+        
+        var ggl = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: 'Google Hybrid'
+        });
+        
+        var gglmps = L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+            attribution: 'Google Maps'
+        });
+
+        // 2. Inicialización del mapa 
+		var map = L.map("mapa", {
+		center: [-0.28066, -79.5306], 
+		zoom: 10,               
+		layers: [ggl],
+		fullscreenControl: true
+		});
+
+        // 3. Iconos personalizados 
+        var iconoIncendio = L.icon({
+            iconUrl: "https://img1.picmix.com/output/stamp/normal/3/0/0/2/672003_d26a7.gif",
+            iconSize: [60, 60],
+            iconAnchor: [55, 55],
+        });
+		
+		var iconoBosque = L.icon({
+			iconUrl: "https://i.pinimg.com/originals/36/cf/a3/36cfa313e631bfaf3f68a8c3dca14b7d.gif", 
+			iconSize: [70, 70],
+			iconAnchor: [65, 65]
+		});
+
+		var iconoAlerta = L.icon({
+			iconUrl: "https://media.tenor.com/Z6sMOpVRG78AAAAj/searching-loading.gif", 
+			iconSize: [35, 35],
+			iconAnchor: [17, 17]
+		});
+
+        // 4. Grupo de Clusters
+        var grupoCluster = L.markerClusterGroup();
+		
+		fetch("https://raw.githubusercontent.com/cinthyabaque/BigData/main/Incendios_Ecu.geojson")
+		.then(response => response.json())
+		.then(data => {
+       
+	    var capaGeojson = L.geoJSON(data, {
+            pointToLayer: function (feature, latlng) {
+                
+        var latReal = parseFloat(feature.properties.LATITUD);
+        var lngReal = parseFloat(feature.properties.LONGITUD);
+                
+               
+        if (!isNaN(latReal) && !isNaN(lngReal)) {
+		return L.marker([latReal, lngReal], { icon: iconoIncendio }); 
+        }
+        },
+		
+        onEachFeature: function (feature, layer) {
+        // Agregamos el popup
+        if (feature.properties && feature.properties.EVENTO) {
+           layer.bindPopup("<b>Evento:</b> <span style='color:#1B5E20'>" + feature.properties.EVENTO + "</span>" +
+                           "<br><b>Parroquia:</b> <span style='color:#1B5E20'>" + feature.properties.DPA_DESPAR+ "</span>" +
+                           "<br><b>Cantón:</b> <span style='color:#1B5E20'> " + feature.properties.DPA_DESCAN+ "</span>" +
+                           "<br><b>Categoría del Evento:</b> <span style='color:#1B5E20'>" + feature.properties.CATEGORIA_DEL_EVENTO+ "</span>" +         
+                           "<br><b>Fecha del evento:</b> <span style='color:#1B5E20'>" + feature.properties.FECHA_DEL_EVENTO) + "</span>";
+		   layer.on("mouseover", function() { this.openPopup(); });
+		   layer.on("mouseout", function() { this.closePopup(); });
+			}		
+            }
+        });
+        
+        // 5. Añadimos la capa al grupo de clusters y al mapa
+        grupoCluster.addLayer(capaGeojson);
+        map.addLayer(grupoCluster);
+		})
+		
+
+        var basemaps = {
+            "Google Hybrid": ggl,
+            "Open Street Maps": osm,
+            "Google Maps": gglmps
+        };
+
+        L.control.layers(basemaps).addTo(map);
+		
+    </script>
+	
+</body>
+
+</html>
